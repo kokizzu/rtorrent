@@ -108,7 +108,7 @@ xmlrpc_find_tracker(core::Download* download, uint32_t index) {
   if (index >= download->tracker_list()->size())
     return NULL;
 
-  return download->tracker_list()->at(index);
+  return download->tracker_list()->at(index).get();
 }
 
 torrent::Peer*

@@ -81,7 +81,7 @@ WindowTrackerList::redraw() {
   unsigned int group = tl->at(range.first)->group();
 
   while (range.first != range.second) {
-    torrent::Tracker* tracker = tl->at(range.first);
+    auto tracker = tl->at(range.first);
 
     if (tracker->group() == group)
       m_canvas->print(0, pos, "%2i:", group++);

@@ -98,12 +98,12 @@ apply_dht_add_node(const std::string& arg) {
 
 torrent::Object
 apply_enable_trackers(int64_t arg) {
-  for (core::Manager::DListItr itr = control->core()->download_list()->begin(), last = control->core()->download_list()->end(); itr != last; ++itr) {
-    std::for_each((*itr)->tracker_list()->begin(), (*itr)->tracker_list()->end(),
-                  arg ? std::mem_fun(&torrent::Tracker::enable) : std::mem_fun(&torrent::Tracker::disable));
+  for (auto&& itr : *control->core()->download_list()) {
+    std::for_each(itr->tracker_list()->begin(), itr->tracker_list()->end(),
+                  [arg](auto& v){ return arg ? v->enable() : v->disable(); });
 
     if (arg && !rpc::call_command_value("trackers.use_udp"))
-      (*itr)->enable_udp_trackers(false);
+      itr->enable_udp_trackers(false);
   }    
 
   return torrent::Object();
