@@ -42,6 +42,7 @@ SignalHandler::set_handler(unsigned int signum, slot_void slot) {
     throw std::logic_error("SignalHandler::set_handler(...) received an empty slot.");
 
   struct sigaction sa;
+
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART;
   sa.sa_handler = &SignalHandler::caught;
@@ -50,6 +51,34 @@ SignalHandler::set_handler(unsigned int signum, slot_void slot) {
     throw std::logic_error("Could not set sigaction: " + std::string(std::strerror(errno)));
   else
     m_handlers[signum] = slot;
+}
+
+void
+SignalHandler::set_block(unsigned int signum) {
+  if (signum >= HIGHEST_SIGNAL)
+    throw std::logic_error("SignalHandler::set_block(...) received invalid signal value.");
+
+  sigset_t mask;
+
+  sigemptyset(&mask);
+  sigaddset(&mask, signum);
+
+  if (pthread_sigmask(SIG_BLOCK, &mask, NULL) == -1)
+    throw std::logic_error("Could not block signal: " + std::string(std::strerror(errno)));
+}
+
+void
+SignalHandler::set_unblock(unsigned int signum) {
+  if (signum >= HIGHEST_SIGNAL)
+    throw std::logic_error("SignalHandler::set_unblock(...) received invalid signal value.");
+
+  sigset_t mask;
+
+  sigemptyset(&mask);
+  sigaddset(&mask, signum);
+
+  if (pthread_sigmask(SIG_UNBLOCK, &mask, NULL) == -1)
+    throw std::logic_error("Could not unblock signal: " + std::string(std::strerror(errno)));
 }
 
 void

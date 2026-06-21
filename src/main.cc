@@ -112,8 +112,16 @@ main(int argc, char** argv) {
     // TODO: Create a fake thread object for initializing other processes and enabling logging.
     torrent::initialize_main_thread();
 
+    // Block SIGCHLD until all threads are created, then unblock on main-thread, to avoid SIGCHLD
+    // interrupting other threads.
+    //
+    // This means only main-thread can fork and wait for child processes.
+
+    SignalHandler::set_block(SIGALRM);
+    SignalHandler::set_block(SIGPIPE);
+    SignalHandler::set_block(SIGCHLD);
+
     // All signal handlers must restore errno if they return.
-    SignalHandler::set_ignore(SIGPIPE);
     SignalHandler::set_handler(SIGSEGV,  std::bind(&do_panic, SIGSEGV));
     SignalHandler::set_handler(SIGILL,   std::bind(&do_panic, SIGILL));
     SignalHandler::set_handler(SIGFPE,   std::bind(&do_panic, SIGFPE));
@@ -155,6 +163,8 @@ main(int argc, char** argv) {
 
     scgi::ThreadScgi::create_thread();
     session::ThreadSession::create_thread();
+
+    SignalHandler::set_unblock(SIGCHLD);
 
     // Initialize option handlers after libtorrent to ensure
     // torrent::ConnectionManager* are valid etc.
@@ -353,6 +363,14 @@ main(int argc, char** argv) {
     CMD_REDIRECT("network.max_open_sockets.set",  "system.sockets.max_size.set");
 
     rpc::rpc.mark_safe("network.max_open_sockets");
+
+    CMD2_ANY_VALUE_V("network.http.max_total_connections.set", [](auto, auto) {
+        lt_log_print(torrent::LOG_WARN, "network.http.max_total_connections.set is deprecated, use system.sockets.http.min_alloc.set instead.");
+      });
+
+    CMD2_ANY_VALUE_V("network.max_open_files.set", [](auto, auto) {
+        lt_log_print(torrent::LOG_WARN, "network.max_open_files.set is deprecated, use system.sockets.files.min_alloc.set instead.");
+      });
 
     // if (rpc::call_command_value("method.use_intermediate") == 1) {
 
